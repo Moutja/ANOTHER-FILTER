@@ -1,0 +1,31 @@
+name: Build VST3 (Windows)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - name: Check out plugin
+        uses: actions/checkout@v4
+
+      - name: Get the VST3 SDK
+        shell: bash
+        run: git clone --depth 1 --recursive --shallow-submodules https://github.com/steinbergmedia/vst3sdk.git "$RUNNER_TEMP/vst3sdk"
+
+      - name: Configure
+        shell: bash
+        run: cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DVST3_SDK_ROOT="$RUNNER_TEMP/vst3sdk"
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Upload plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: MS20Filter-vst3-windows
+          path: build/VST3/Release/
+          if-no-files-found: error
