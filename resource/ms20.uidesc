@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vstgui-ui-description version="1">
+  <bitmaps>
+    <bitmap name="knob" path="knob.png"/>
+  </bitmaps>
+  <colors>
+    <color name="bg" rgba="#15171bff"/>
+    <color name="panel" rgba="#1e2127ff"/>
+    <color name="line" rgba="#33373fff"/>
+    <color name="accent" rgba="#ff8a1fff"/>
+    <color name="text" rgba="#e6e3dcff"/>
+    <color name="dim" rgba="#8b919aff"/>
+    <color name="knobshadow" rgba="#000000a0"/>
+  </colors>
+  <fonts>
+    <font name="title" font-name="Arial" size="22" bold="true" italic="false" underline="false" strike-through="false"/>
+    <font name="section" font-name="Arial" size="10" bold="true" italic="false" underline="false" strike-through="false"/>
+    <font name="label" font-name="Arial" size="10" bold="true" italic="false" underline="false" strike-through="false"/>
+    <font name="value" font-name="Arial" size="11" bold="false" italic="false" underline="false" strike-through="false"/>
+  </fonts>
+  <control-tags>
+    <control-tag name="HpFreq" tag="0"/>
+    <control-tag name="HpPeak" tag="1"/>
+    <control-tag name="LpFreq" tag="2"/>
+    <control-tag name="LpPeak" tag="3"/>
+    <control-tag name="Drive" tag="4"/>
+    <control-tag name="Mix" tag="5"/>
+    <control-tag name="Output" tag="6"/>
+  </control-tags>
+  <template name="view" class="CViewContainer" size="740, 210" background-color="bg" transparent="false">
+    <view class="CTextLabel" origin="30, 12" size="320, 30" title="ANOTHER FILTER" font="title" font-color="accent" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CTextLabel" origin="30, 54" size="170, 16" title="HIGH-PASS" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CViewContainer" origin="30, 72" size="170, 1" background-color="line" transparent="false"/>
+    <view class="CTextLabel" origin="30, 82" size="80, 14" title="HP FREQ" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CAnimKnob" origin="38, 100" size="64, 64" control-tag="HpFreq" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="34, 170" size="72, 18" control-tag="HpFreq" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CTextLabel" origin="120, 82" size="80, 14" title="HP PEAK" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CAnimKnob" origin="128, 100" size="64, 64" control-tag="HpPeak" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="124, 170" size="72, 18" control-tag="HpPeak" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CTextLabel" origin="240, 54" size="170, 16" title="LOW-PASS" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CViewContainer" origin="240, 72" size="170, 1" background-color="line" transparent="false"/>
+    <view class="CTextLabel" origin="240, 82" size="80, 14" title="LP FREQ" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CAnimKnob" origin="248, 100" size="64, 64" control-tag="LpFreq" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="244, 170" size="72, 18" control-tag="LpFreq" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CTextLabel" origin="330, 82" size="80, 14" title="LP PEAK" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CAnimKnob" origin="338, 100" size="64, 64" control-tag="LpPeak" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="334, 170" size="72, 18" control-tag="LpPeak" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CTextLabel" origin="450, 54" size="260, 16" title="OUTPUT" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CViewContainer" origin="450, 72" size="260, 1" background-color="line" transparent="false"/>
+    <view class="CTextLabel" origin="450, 82" size="80, 14" title="DRIVE" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CAnimKnob" origin="458, 100" size="64, 64" control-tag="Drive" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="454, 170" size="72, 18" control-tag="Drive" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CTextLabel" origin="540, 82" size="80, 14" title="MIX" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CAnimKnob" origin="548, 100" size="64, 64" control-tag="Mix" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="544, 170" size="72, 18" control-tag="Mix" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CTextLabel" origin="630, 82" size="80, 14" title="OUTPUT" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CAnimKnob" origin="638, 100" size="64, 64" control-tag="Output" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="634, 170" size="72, 18" control-tag="Output" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+  </template>
+</vstgui-ui-description>
