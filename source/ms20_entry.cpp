@@ -17,7 +17,7 @@ BEGIN_FACTORY_DEF("Your Name", "https://example.com", "mailto:you@example.com")
                kVstAudioEffectClass,
                "Another Filter",
                Vst::kDistributable,
-               Vst::PlugType::kFxFilter,
+               Vst::PlugType::kInstrumentSynth,
                MS20_VERSION_STR,
                kVstVersionString,
                MS20::Processor::createInstance)

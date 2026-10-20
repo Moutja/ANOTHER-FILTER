@@ -24,6 +24,9 @@ smtg_add_vst3plugin(AnotherFilter
   source/ms20_ids.h
   source/ms20_params.h
   source/ms20_filter.h
+  source/ms20_synth.h
+  source/ms20_presets.h
+  source/ms20_scope.h
   source/ms20_processor.h
   source/ms20_processor.cpp
   source/ms20_controller.h
@@ -38,4 +41,6 @@ smtg_target_add_plugin_resources(AnotherFilter
     resource/ms20.uidesc
     resource/knob.png
     resource/knob_2.0x.png
+    resource/knob_s.png
+    resource/knob_s_2.0x.png
 )

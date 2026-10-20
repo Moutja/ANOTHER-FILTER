@@ -1,14 +1,27 @@
 #include "ms20_controller.h"
 #include "ms20_ids.h"
 #include "ms20_params.h"
+#include "ms20_presets.h"
 
 #include "base/source/fstreamer.h"
 #include "pluginterfaces/base/ibstream.h"
-#include "pluginterfaces/base/ustring.h"
 #include "public.sdk/source/vst/vstparameters.h"
+#include "pluginterfaces/vst/ivstmessage.h"
+#include "pluginterfaces/vst/ivstmidicontrollers.h"
+#include "vstgui/lib/ccolor.h"
+#include "vstgui/lib/cdrawcontext.h"
+#include "vstgui/lib/cview.h"
+#include "vstgui/lib/cvstguitimer.h"
 #include "vstgui/plugin-bindings/vst3editor.h"
+#include "vstgui/uidescription/iuidescription.h"
+#include "vstgui/uidescription/uiattributes.h"
 
 #include <algorithm>
+#include <cmath>
+#include <string>
+#include <vector>
+
+#include <string>
 
 using namespace Steinberg;
 using namespace Steinberg::Vst;
@@ -17,44 +30,152 @@ namespace MS20 {
 
 namespace {
 
-// Frequency parameter with a logarithmic normalized<->Hz mapping
-class LogFreqParameter : public Parameter
+void toTChar(const std::string& s, TChar* out, int cap)
+{
+    int i = 0;
+    for (; i < cap - 1 && i < static_cast<int>(s.size()); ++i)
+        out[i] = static_cast<TChar>(static_cast<unsigned char>(s[i]));
+    out[i] = 0;
+}
+
+// One class serves every parameter: mapping, step count and display text all come from kSpecs.
+// Units are part of the display text ("1.2 kHz", "250 ms"), so the parameter's own units field stays empty.
+class SpecParameter : public Parameter
 {
 public:
-    LogFreqParameter(const TChar* title, ParamID tag, double minHz, double maxHz, double defaultNorm)
-    : Parameter(title, tag, STR16("Hz"), defaultNorm, 0, ParameterInfo::kCanAutomate)
-    , minHz_(minHz), maxHz_(maxHz)
+    SpecParameter(int id, const TChar* title)
+    : Parameter(title, static_cast<ParamID>(id), STR16(""), 0.0, 0, ParameterInfo::kCanAutomate)
+    , id_(id)
     {
-        setPrecision(0);
+        const ParamSpec& s = kSpecs[id];
+        if (s.fmt == Fmt::List)
+        {
+            info.stepCount = s.listCount - 1;
+            info.flags |= ParameterInfo::kIsList;
+        }
+        info.defaultNormalizedValue = defaultNormalized(id);
+        valueNormalized = info.defaultNormalizedValue;
     }
 
-    ParamValue toPlain(ParamValue n) const SMTG_OVERRIDE { return logMap(n, minHz_, maxHz_); }
+    ParamValue toPlain(ParamValue n) const SMTG_OVERRIDE
+    {
+        return kSpecs[id_].fmt == Fmt::List ? specToIndex(id_, n) : specToPlain(id_, n);
+    }
+
     ParamValue toNormalized(ParamValue p) const SMTG_OVERRIDE
     {
-        return logUnmap(std::min(maxHz_, std::max(minHz_, p)), minHz_, maxHz_);
+        return kSpecs[id_].fmt == Fmt::List ? indexToNormalized(id_, static_cast<int>(p)) : specToNormalized(id_, p);
     }
 
     void toString(ParamValue n, String128 str) const SMTG_OVERRIDE
     {
-        UString wrapper(str, str16BufferSize(String128));
-        wrapper.printFloat(toPlain(n), 0);
+        toTChar(formatValue(id_, n), str, 128);
     }
 
     bool fromString(const TChar* str, ParamValue& n) const SMTG_OVERRIDE
     {
-        UString wrapper(const_cast<TChar*>(str), str16BufferSize(String128));
+        char buf[64];
+        int i = 0;
+        for (; i < 63 && str[i]; ++i)
+            buf[i] = str[i] < 128 ? static_cast<char>(str[i]) : '?';
+        buf[i] = 0;
         double v = 0.0;
-        if (!wrapper.scanFloat(v))
+        if (!parseValue(id_, buf, v))
             return false;
-        n = toNormalized(v);
+        n = v;
         return true;
     }
 
 private:
-    double minHz_, maxHz_;
+    int id_;
 };
 
 } // namespace
+
+
+// Live oscilloscope: redraws ~30 times a second from the processor's ring buffer.
+class ScopeView : public VSTGUI::CView
+{
+public:
+    ScopeView(const VSTGUI::CRect& size, Controller* controller) : VSTGUI::CView(size), controller_(controller) {}
+
+    bool attached(VSTGUI::CView* parent) override
+    {
+        const bool ok = VSTGUI::CView::attached(parent);
+        if (ok)
+            timer_ = VSTGUI::owned(new VSTGUI::CVSTGUITimer([this](VSTGUI::CVSTGUITimer*) { invalid(); }, 33));
+        return ok;
+    }
+
+    bool removed(VSTGUI::CView* parent) override
+    {
+        timer_ = nullptr;
+        return VSTGUI::CView::removed(parent);
+    }
+
+    void draw(VSTGUI::CDrawContext* context) override
+    {
+        using namespace VSTGUI;
+        const CRect r = getViewSize();
+        const double w = r.getWidth(), h = r.getHeight();
+
+        context->setDrawMode(kAntiAliasing);
+        context->setFillColor(CColor(0x1e, 0x21, 0x27, 0xff));
+        context->drawRect(r, kDrawFilled);
+
+        // grid: centre line and 8 vertical divisions
+        context->setLineWidth(1.0);
+        context->setFrameColor(CColor(0x33, 0x37, 0x3f, 0xff));
+        CDrawContext::LineList grid;
+        grid.push_back({CPoint(r.left, r.top + h / 2), CPoint(r.right, r.top + h / 2)});
+        for (int i = 1; i < 8; ++i)
+            grid.push_back({CPoint(r.left + w * i / 8, r.top), CPoint(r.left + w * i / 8, r.bottom)});
+        context->drawLines(grid);
+
+        // trace
+        float raw[kRaw], win[kWindow];
+        auto scope = controller_ ? controller_->scope() : nullptr;
+        if (scope)
+        {
+            scope->latest(raw, kRaw);
+            scopeWindow(raw, kRaw, win, kWindow);
+        }
+        else
+            for (float& v : win) v = 0.f;
+
+        float peak = 0.05f;
+        for (float v : win) peak = std::max(peak, std::fabs(v));
+        const double target = std::min(8.0, std::max(1.0, 0.9 / peak));
+        gain_ += (target - gain_) * 0.15;                     // smooth auto-scaling
+
+        const int cols = static_cast<int>(w);
+        CDrawContext::LineList trace;
+        CPoint prev;
+        for (int x = 0; x < cols; ++x)
+        {
+            const int idx = std::min(kWindow - 1, x * kWindow / std::max(1, cols));
+            const CPoint p(r.left + x, r.top + h / 2 - std::max(-1.0, std::min(1.0, static_cast<double>(win[idx]) * gain_)) * (h / 2 - 4));
+            if (x > 0)
+                trace.push_back({prev, p});
+            prev = p;
+        }
+        context->setLineWidth(1.6);
+        context->setFrameColor(CColor(0xff, 0x8a, 0x1f, 0xff));
+        context->drawLines(trace);
+
+        context->setFrameColor(CColor(0x33, 0x37, 0x3f, 0xff));
+        context->setLineWidth(1.0);
+        context->drawRect(r, kDrawStroked);
+        setDirty(false);
+    }
+
+private:
+    static constexpr int kRaw = 2304;     // newest samples fetched
+    static constexpr int kWindow = 1024;  // samples drawn after the trigger point
+    Controller* controller_;
+    VSTGUI::SharedPointer<VSTGUI::CVSTGUITimer> timer_;
+    double gain_ = 1.0;
+};
 
 tresult PLUGIN_API Controller::initialize(FUnknown* context)
 {
@@ -62,28 +183,27 @@ tresult PLUGIN_API Controller::initialize(FUnknown* context)
     if (result != kResultOk)
         return result;
 
-    auto addPercent = [this](const TChar* title, ParamID id, double defaultNorm) {
-        auto* p = new RangeParameter(title, id, STR16("%"), 0.0, 100.0, defaultNorm * 100.0, 0,
-                                     ParameterInfo::kCanAutomate);
-        p->setPrecision(0);
-        parameters.addParameter(p);
-    };
-
-    parameters.addParameter(new LogFreqParameter(STR16("HP Freq"), kParamHpFreq, Range::kHpMinHz,
-                                                 Range::kHpMaxHz, kDefaults[kParamHpFreq]));
-    addPercent(STR16("HP Peak"), kParamHpPeak, kDefaults[kParamHpPeak]);
-    parameters.addParameter(new LogFreqParameter(STR16("LP Freq"), kParamLpFreq, Range::kLpMinHz,
-                                                 Range::kLpMaxHz, kDefaults[kParamLpFreq]));
-    addPercent(STR16("LP Peak"), kParamLpPeak, kDefaults[kParamLpPeak]);
-    addPercent(STR16("Drive"), kParamDrive, kDefaults[kParamDrive]);
-    addPercent(STR16("Mix"), kParamMix, kDefaults[kParamMix]);
-
-    auto* out = new RangeParameter(STR16("Output"), kParamOutput, STR16("dB"), Range::kOutMinDb,
-                                   Range::kOutMaxDb, 0.0, 0, ParameterInfo::kCanAutomate);
-    out->setPrecision(1);
-    parameters.addParameter(out);
-
+    for (int i = 0; i < kParamCount; ++i)
+    {
+        TChar title[64];
+        toTChar(kSpecs[i].title, title, 64);
+        parameters.addParameter(new SpecParameter(i, title));
+    }
     return kResultOk;
+}
+
+tresult PLUGIN_API Controller::queryInterface(const char* iid, void** obj)
+{
+    QUERY_INTERFACE(iid, obj, IMidiMapping::iid, IMidiMapping)
+    return EditController::queryInterface(iid, obj);
+}
+
+tresult PLUGIN_API Controller::getMidiControllerAssignment(int32 /*busIndex*/, int16 /*channel*/,
+                                                           CtrlNumber midiControllerNumber, ParamID& id)
+{
+    if (midiControllerNumber == kCtrlModWheel) { id = kParamModWheel; return kResultTrue; }
+    if (midiControllerNumber == kPitchBend)    { id = kParamPitchBend; return kResultTrue; }
+    return kResultFalse;
 }
 
 tresult PLUGIN_API Controller::setComponentState(IBStream* state)
@@ -91,18 +211,99 @@ tresult PLUGIN_API Controller::setComponentState(IBStream* state)
     if (!state)
         return kResultFalse;
     IBStreamer s(state, kLittleEndian);
-    int32 version = 0;
-    if (!s.readInt32(version) || version != 1)
+    int32 version = 0, count = 0;
+    if (!s.readInt32(version) || version != 2 || !s.readInt32(count) || count < 0)
         return kResultFalse;
 
-    for (int i = 0; i < kNumParams; ++i)
+    double values[kParamCount];
+    for (int i = 0; i < kParamCount; ++i)
+        values[i] = defaultNormalized(i);   // parameters missing from older saved states keep their defaults
+    for (int32 i = 0; i < count; ++i)
     {
         double v = 0.0;
         if (!s.readDouble(v))
             return kResultFalse;
-        setParamNormalized(static_cast<ParamID>(i), v);
+        if (i < kParamCount)
+            values[i] = v;
     }
+
+    // Loading a saved state must not re-apply the preset on top of the saved values
+    lastPreset_ = specToIndex(kParamPreset, values[kParamPreset]);
+    for (int i = 0; i < kParamCount; ++i)
+        EditController::setParamNormalized(static_cast<ParamID>(i), values[i]);
     return kResultOk;
+}
+
+// Choosing a preset (changing the Preset parameter) loads all of its values
+tresult PLUGIN_API Controller::setParamNormalized(ParamID tag, ParamValue value)
+{
+    const tresult result = EditController::setParamNormalized(tag, value);
+    if (tag == kParamPreset)
+    {
+        const int index = specToIndex(kParamPreset, value);
+        if (index != lastPreset_)
+        {
+            lastPreset_ = index;
+            applyPreset(index);
+        }
+    }
+    return result;
+}
+
+void Controller::applyPreset(int index)
+{
+    double norm[kParamCount];
+    presetToNormalized(index, norm);
+    for (int i = 0; i < kParamCount; ++i)
+    {
+        if (presetSkips(i))
+            continue;
+        const ParamID id = static_cast<ParamID>(i);
+        EditController::setParamNormalized(id, norm[i]);
+        beginEdit(id);
+        performEdit(id, norm[i]);
+        endEdit(id);
+    }
+}
+
+tresult PLUGIN_API Controller::connect(IConnectionPoint* other)
+{
+    const tresult result = EditController::connect(other);
+    if (IPtr<IMessage> msg = owned(allocateMessage()))
+    {
+        msg->setMessageID("MS20ScopeHello");
+        sendMessage(msg);
+    }
+    return result;
+}
+
+tresult PLUGIN_API Controller::notify(IMessage* message)
+{
+    if (message && FIDStringsEqual(message->getMessageID(), "MS20Scope"))
+    {
+        int64 id = 0;
+        if (message->getAttributes()->getInt("id", id) == kResultOk)
+        {
+            auto found = ScopeRegistry::find(static_cast<std::int64_t>(id));
+            std::lock_guard<std::mutex> lock(scopeMutex_);
+            scope_ = found;
+        }
+        return kResultOk;
+    }
+    return EditController::notify(message);
+}
+
+VSTGUI::CView* Controller::createCustomView(VSTGUI::UTF8StringPtr name, const VSTGUI::UIAttributes& attributes,
+                                            const VSTGUI::IUIDescription*, VSTGUI::VST3Editor*)
+{
+    if (name && std::string(name) == "Scope")
+    {
+        VSTGUI::CPoint origin, size;
+        attributes.getPointAttribute("origin", origin);
+        attributes.getPointAttribute("size", size);
+        return new ScopeView(VSTGUI::CRect(origin, size), this);
+    }
+    return nullptr;
 }
 
 IPlugView* PLUGIN_API Controller::createView(FIDString name)

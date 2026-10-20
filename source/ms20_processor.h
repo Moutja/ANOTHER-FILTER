@@ -1,7 +1,11 @@
 #pragma once
 #include "public.sdk/source/vst/vstaudioeffect.h"
-#include "ms20_filter.h"
 #include "ms20_ids.h"
+#include "ms20_params.h"
+#include "ms20_scope.h"
+#include "ms20_synth.h"
+
+#include <memory>
 
 namespace MS20 {
 
@@ -24,12 +28,17 @@ public:
     Steinberg::tresult PLUGIN_API process(Steinberg::Vst::ProcessData& data) SMTG_OVERRIDE;
     Steinberg::tresult PLUGIN_API setState(Steinberg::IBStream* state) SMTG_OVERRIDE;
     Steinberg::tresult PLUGIN_API getState(Steinberg::IBStream* state) SMTG_OVERRIDE;
+    Steinberg::tresult PLUGIN_API connect(Steinberg::Vst::IConnectionPoint* other) SMTG_OVERRIDE;
+    Steinberg::tresult PLUGIN_API notify(Steinberg::Vst::IMessage* message) SMTG_OVERRIDE;
 
 private:
-    void pushTargets();
+    void pushParams();
+    void sendScopeId();
 
     double norm_[kNumParams];
-    Filter filter_;
+    Synth synth_;
+    std::shared_ptr<ScopeBuffer> scope_;
+    std::int64_t scopeId_ = 0;
 };
 
 } // namespace MS20

@@ -1,53 +1,72 @@
-# Another Filter (VST3, Windows)
+# Another Filter (VST3 synth, Windows)
 
-An MS-20-style filter effect: **HP → LP**, each a 12 dB/oct Sallen-Key-style (Korg-35 topology)
-stage with a tanh-saturated resonance feedback path, plus input drive, dry/wet mix and output trim.
-This is an original implementation, not a copy of any existing plugin.
+An 8-voice synthesizer: two Minilogue-XD-style oscillators feeding an MS-20-style filter section
+(HP then LP, each 12 dB/oct with a saturated resonance loop), with two drive types, a filter envelope,
+an LFO, an amp envelope, a reverb, 10 factory presets and a live oscilloscope. The voices run at 4x oversampling. Original implementation, not a copy of any plugin.
+
+**It is an instrument** (receives MIDI, makes its own sound): put it on a MIDI track.
+
+## Signal path (per voice)
+OSC1 + OSC2 -> drive -> HP stage -> LP stage (cutoff: filter env + LFO) -> dry/wet -> amp ADSR
+-> sum of voices -> 4x decimator -> reverb -> out
 
 ## Parameters
-| Name | Range | Default |
-|---|---|---|
-| HP Freq | 20 Hz – 10 kHz (log) | 20 Hz |
-| HP Peak | 0 – 100 % (self-oscillates at the top) | 0 |
-| LP Freq | 20 Hz – 20 kHz (log) | 20 kHz |
-| LP Peak | 0 – 100 % | 0 |
-| Drive | 0 – 100 % (tanh input gain 1x – 8x) | 0 |
-| Mix | 0 – 100 % | 100 |
-| Output | -24 – +12 dB | 0 |
+| Section | Controls |
+|---|---|
+| OSC 1 / OSC 2 | Wave (SAW/TRI/SQR), Octave (16' 8' 4' 2'), Pitch (+-12 st), Shape |
+| MOD / MIX | X-Mod (OSC2 -> OSC1 pitch), Sync/Ring (OFF / RING / SYNC), Osc Mix |
+| HIGH-PASS / LOW-PASS | Freq (HP 20 Hz-10 kHz, LP 20 Hz-20 kHz), Peak (self-oscillates at max) |
+| OUTPUT | Drive, Drive Type (SOFT = smooth tanh saturation, HARD = harsher hard clipping), Dry/Wet (dry = oscillators, wet = filtered), Output (-24..+12 dB) |
+| AMP ENV | Attack, Decay, Sustain, Release |
+| FILTER ENV | Attack, Decay, Sustain, Release, Amount (-100..+100 %, up to 6 octaves on the LP cutoff) |
+| LFO | Rate (0.05-30 Hz), Wave (SIN, TRI, SQR, S&H), Depth, Target (PITCH, SHAPE, CUTOFF, AMP) |
+| REVERB | Mix, Size, Damp (Freeverb-style stereo reverb, after the voices) |
+| PRESET | 10 factory presets; choosing one loads all sound parameters |
+| SCOPE | Live oscilloscope of the output along the bottom of the window (triggered, auto-scaled) |
+| MIDI | Pitch bend (+-2 semitones) and mod wheel (CC1, adds to LFO depth) are mapped automatically; they have no on-screen control |
 
-## Build (Windows)
-Requirements: Visual Studio 2022 (Desktop C++ workload), CMake 3.20+, Git.
+Shape: on SAW it blends in an octave-up saw, on TRI it is a wavefolder, on SQR it is the pulse width.
+SYNC hard-syncs OSC2 to OSC1; RING replaces OSC2 with OSC1 x OSC2.
+Value readouts show units; you can also type values (e.g. `1.2k`, `250 ms`, `SQR`) in hosts that allow it.
 
+## Build with GitHub Actions (no local setup)
+1. Push this folder to a GitHub repo, keeping `.github/workflows/build.yml` at the top level.
+2. Open the **Actions** tab, run "Build VST3 (Windows)" (it also runs on every push).
+3. Download the artifact, unzip it, and copy the `AnotherFilter.vst3` folder to
+   `C:\Program Files\Common Files\VST3\`. Close the DAW first and delete older builds.
+
+## Build locally (Windows)
+Requirements: Visual Studio 2022 (Desktop C++), CMake 3.20+, Git.
 ```
 git clone --recursive https://github.com/steinbergmedia/vst3sdk.git C:\dev\vst3sdk
 cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -DVST3_SDK_ROOT=C:\dev\vst3sdk
 cmake --build build --config Release
 ```
-The plugin lands in `build\VST3\Release\AnotherFilter.vst3`. Copy it to
-`C:\Program Files\Common Files\VST3\` (admin) or load it from a custom VST3 scan folder.
-
-If the linker reports unresolved `InitModule` / `DeinitModule` (older SDK versions), add
+Output: `build\VST3\Release\AnotherFilter.vst3`.
+If the linker reports unresolved `InitModule` / `DeinitModule` (older SDKs), add
 `bool InitModule() { return true; }` and `bool DeinitModule() { return true; }` to `ms20_entry.cpp`.
 
 ## Layout
-- `source/ms20_filter.h` – all DSP (header-only, no SDK dependency, easy to unit test)
-- `source/ms20_processor.*` – audio processor, parameter handling, state save/load
-- `source/ms20_controller.*` – parameter definitions and editor creation
-- `resource/ms20.uidesc` – the plugin window layout (VSTGUI XML: colors, fonts, knobs, readouts). Edit this file to restyle the UI; no C++ changes needed
-- `resource/knob.png`, `knob_2.0x.png` – knob filmstrips (101 frames). Regenerate with `python tools/make_knob.py` (needs Pillow) after changing colors there
-- `source/ms20_params.h` – ranges and defaults shared by processor and controller
-- `source/ms20_ids.h` – GUIDs (replace them) and parameter IDs
+- `source/ms20_params.h` – every parameter (IDs, ranges, defaults, unit text). Add or change parameters here
+- `source/ms20_synth.h` – the whole sound engine (oscillators, voices, envelopes, LFO, oversampling, reverb), no SDK dependency
+- `source/ms20_scope.h` – oscilloscope data path: lock-free ring buffer, trigger, and the id registry. The processor and the controller find each other with two small messages (`MS20Scope` / `MS20ScopeHello`); the drawing code is `ScopeView` in `ms20_controller.cpp`
+- `source/ms20_presets.h` – factory presets (plain values on top of the defaults); add your own here and extend the Preset list in `ms20_params.h`
+- `source/ms20_filter.h` – the MS-20-style filter stage
+- `source/ms20_processor.*` – audio/MIDI handling and state save/load
+- `source/ms20_controller.*` – parameter objects and window creation
+- `resource/ms20.uidesc` – window layout (generated by `tools/make_uidesc.py`)
+- `resource/knob*.png` – knob filmstrips (generated by `tools/make_knob.py`, needs Pillow)
+- `tests/dsp_test.cpp` – offline tests: `g++ -std=c++17 -O2 -Isource tests/dsp_test.cpp && ./a.out`
+- `source/ms20_ids.h` – GUIDs (replace them before releasing)
 
-## Known limits / next steps
-- No oversampling yet, so heavy drive and high resonance will alias; 2x–4x oversampling around the
-  filter is the first upgrade.
-- The saturator uses the linear solution of the feedback loop to drive tanh (a standard approximation).
-- UI is a first pass (vector knobs, fixed size). If the window is blank, check that
-  `AnotherFilter.vst3/Contents/Resources/ms20.uidesc` and `knob.png` exist in the build output.
-- Stereo only, 32-bit float only.
-
-## Build with GitHub Actions (no local setup)
-1. Create a GitHub repo and push this folder (including `.github/`).
-2. Open the **Actions** tab, pick "Build VST3 (Windows)", and run it (it also runs on every push).
-3. When it finishes, download the `MS20Filter-vst3-windows` artifact. Unzip it and copy the
-   `AnotherFilter.vst3` folder to `C:\Program Files\Common Files\VST3\`.
+## Known limits / ideas
+- Presets are a selector (knob/readout), not a browser; no saving of user presets inside the plugin (use the host's preset system).
+- No unison, no aftertouch, no sustain pedal, no per-voice LFO or key tracking.
+- The LFO is free-running and shared by all voices.
+- Sync is not band-limited (the 4x oversampling hides most of it).
+- Stereo output is mono-in-both-channels.
+- Drive Type is only clearly audible when Drive is turned up (at 0 both are almost linear).
+- Wave/Octave/Sync/Drive Type/LFO Wave/LFO Target/Preset knobs sweep continuously and the readout flips between entries.
+- Window is fixed size (1056 x 558).
+- The scope needs the host to connect the plugin's two halves (Ableton does); if it ever shows a flat line, that link is missing.
+- If the window is blank, check that `AnotherFilter.vst3/Contents/Resources/` contains `ms20.uidesc` and the knob PNGs.

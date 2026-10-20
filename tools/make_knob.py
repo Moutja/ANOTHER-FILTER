@@ -1,5 +1,5 @@
 """Renders the knob filmstrips used by resource/ms20.uidesc (needs: pip install pillow).
-   Outputs resource/knob.png (64 px frames) and resource/knob_2.0x.png (128 px frames, for HiDPI).
+   Outputs knob.png (64 px frames) and knob_s.png (48 px frames) in resource/, each with a _2.0x twin for HiDPI.
    Frames are stacked vertically, FRAMES of them, value 0.0 at the top frame -> 1.0 at the bottom."""
 from PIL import Image, ImageDraw
 import math, os
@@ -72,6 +72,7 @@ def strip(size):
 if __name__ == "__main__":
     here = os.path.dirname(os.path.abspath(__file__))
     res = os.path.join(here, "..", "resource")
-    strip(64).save(os.path.join(res, "knob.png"), optimize=True)
-    strip(128).save(os.path.join(res, "knob_2.0x.png"), optimize=True)
-    print("wrote knob.png and knob_2.0x.png,", FRAMES, "frames")
+    for name, size in (("knob", 64), ("knob_s", 48)):
+        strip(size).save(os.path.join(res, name + ".png"), optimize=True)
+        strip(size * 2).save(os.path.join(res, name + "_2.0x.png"), optimize=True)
+    print("wrote knob / knob_s filmstrips (1x and 2x),", FRAMES, "frames each")
