@@ -3,20 +3,47 @@
   <bitmaps>
     <bitmap name="knob" path="knob.png"/>
     <bitmap name="knob_s" path="knob_s.png"/>
+    <bitmap name="knob_s_blue" path="knob_s_blue.png"/>
   </bitmaps>
   <colors>
     <color name="bg" rgba="#15171bff"/>
     <color name="panel" rgba="#1e2127ff"/>
     <color name="line" rgba="#33373fff"/>
     <color name="accent" rgba="#ff8a1fff"/>
+    <color name="oscblue" rgba="#6ec6ffff"/>
+    <color name="oscbluedim" rgba="#2c4a5eff"/>
     <color name="text" rgba="#e6e3dcff"/>
+    <color name="ink" rgba="#15171bff"/>
     <color name="dim" rgba="#8b919aff"/>
   </colors>
+  <gradients>
+    <gradient name="swoff">
+      <color-stop rgba="#2a2e35ff" start="0"/>
+      <color-stop rgba="#1c1f24ff" start="1"/>
+    </gradient>
+    <gradient name="swon_orange">
+      <color-stop rgba="#ffa04dff" start="0"/>
+      <color-stop rgba="#ff7a0fff" start="1"/>
+    </gradient>
+    <gradient name="swon_blue">
+      <color-stop rgba="#9ad8ffff" start="0"/>
+      <color-stop rgba="#55b9f5ff" start="1"/>
+    </gradient>
+    <gradient name="btnoff">
+      <color-stop rgba="#2f343cff" start="0"/>
+      <color-stop rgba="#20242aff" start="1"/>
+    </gradient>
+    <gradient name="btnon">
+      <color-stop rgba="#ffa04dff" start="0"/>
+      <color-stop rgba="#ff7a0fff" start="1"/>
+    </gradient>
+  </gradients>
   <fonts>
     <font name="title" font-name="Arial" size="20" bold="true" italic="false" underline="false" strike-through="false"/>
     <font name="section" font-name="Arial" size="10" bold="true" italic="false" underline="false" strike-through="false"/>
     <font name="label" font-name="Arial" size="10" bold="true" italic="false" underline="false" strike-through="false"/>
     <font name="labelsmall" font-name="Arial" size="9" bold="true" italic="false" underline="false" strike-through="false"/>
+    <font name="switchfont" font-name="Arial" size="9" bold="true" italic="false" underline="false" strike-through="false"/>
     <font name="value" font-name="Arial" size="11" bold="false" italic="false" underline="false" strike-through="false"/>
     <font name="valuesmall" font-name="Arial" size="10" bold="false" italic="false" underline="false" strike-through="false"/>
   </fonts>
@@ -59,140 +86,141 @@
     <control-tag name="ModWheel" tag="35"/>
     <control-tag name="PitchBend" tag="36"/>
     <control-tag name="Preset" tag="37"/>
+    <control-tag name="PresetPrev" tag="38"/>
+    <control-tag name="PresetNext" tag="39"/>
+    <control-tag name="SavePreset" tag="40"/>
   </control-tags>
   <template name="view" class="CViewContainer" size="1056, 558" background-color="bg" transparent="false">
     <view class="CTextLabel" origin="30, 10" size="240, 30" title="ANOTHER FILTER" font="title" font-color="accent" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CTextLabel" origin="30, 44" size="220, 14" title="SYNTH + MS-20 STYLE FILTER" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CTextLabel" origin="282, 14" size="256, 16" title="OSC 1" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CViewContainer" origin="282, 32" size="256, 1" background-color="line" transparent="false"/>
+    <view class="CTextLabel" origin="282, 14" size="256, 16" title="OSC 1" font="section" font-color="oscblue" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CViewContainer" origin="282, 32" size="256, 1" background-color="oscbluedim" transparent="false"/>
     <view class="CTextLabel" origin="282, 42" size="64, 14" title="WAVE" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="290, 60" size="48, 48" control-tag="Osc1Wave" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="284, 114" size="60, 16" control-tag="Osc1Wave" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CSegmentButton" origin="288, 65" size="52, 60" control-tag="Osc1Wave" style="vertical" segment-names="SAW,TRI,SQR" font="switchfont" text-color="text" text-color-highlighted="ink" frame-color="line" round-radius="5" gradient="swoff" gradient-highlighted="swon_blue" text-alignment="center"/>
     <view class="CTextLabel" origin="346, 42" size="64, 14" title="OCT" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="354, 60" size="48, 48" control-tag="Osc1Oct" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="348, 114" size="60, 16" control-tag="Osc1Oct" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CAnimKnob" origin="354, 60" size="48, 48" control-tag="Osc1Oct" bitmap="knob_s_blue" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="348, 114" size="60, 16" control-tag="Osc1Oct" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="410, 42" size="64, 14" title="PITCH" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="418, 60" size="48, 48" control-tag="Osc1Pitch" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="412, 114" size="60, 16" control-tag="Osc1Pitch" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CAnimKnob" origin="418, 60" size="48, 48" control-tag="Osc1Pitch" bitmap="knob_s_blue" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="412, 114" size="60, 16" control-tag="Osc1Pitch" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="474, 42" size="64, 14" title="SHAPE" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="482, 60" size="48, 48" control-tag="Osc1Shape" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="476, 114" size="60, 16" control-tag="Osc1Shape" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
-    <view class="CTextLabel" origin="558, 14" size="256, 16" title="OSC 2" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CViewContainer" origin="558, 32" size="256, 1" background-color="line" transparent="false"/>
+    <view class="CAnimKnob" origin="482, 60" size="48, 48" control-tag="Osc1Shape" bitmap="knob_s_blue" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="476, 114" size="60, 16" control-tag="Osc1Shape" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
+    <view class="CTextLabel" origin="558, 14" size="256, 16" title="OSC 2" font="section" font-color="oscblue" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CViewContainer" origin="558, 32" size="256, 1" background-color="oscbluedim" transparent="false"/>
     <view class="CTextLabel" origin="558, 42" size="64, 14" title="WAVE" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="566, 60" size="48, 48" control-tag="Osc2Wave" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="560, 114" size="60, 16" control-tag="Osc2Wave" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CSegmentButton" origin="564, 65" size="52, 60" control-tag="Osc2Wave" style="vertical" segment-names="SAW,TRI,SQR" font="switchfont" text-color="text" text-color-highlighted="ink" frame-color="line" round-radius="5" gradient="swoff" gradient-highlighted="swon_blue" text-alignment="center"/>
     <view class="CTextLabel" origin="622, 42" size="64, 14" title="OCT" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="630, 60" size="48, 48" control-tag="Osc2Oct" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="624, 114" size="60, 16" control-tag="Osc2Oct" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CAnimKnob" origin="630, 60" size="48, 48" control-tag="Osc2Oct" bitmap="knob_s_blue" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="624, 114" size="60, 16" control-tag="Osc2Oct" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="686, 42" size="64, 14" title="PITCH" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="694, 60" size="48, 48" control-tag="Osc2Pitch" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="688, 114" size="60, 16" control-tag="Osc2Pitch" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CAnimKnob" origin="694, 60" size="48, 48" control-tag="Osc2Pitch" bitmap="knob_s_blue" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="688, 114" size="60, 16" control-tag="Osc2Pitch" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="750, 42" size="64, 14" title="SHAPE" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="758, 60" size="48, 48" control-tag="Osc2Shape" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="752, 114" size="60, 16" control-tag="Osc2Shape" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
-    <view class="CTextLabel" origin="834, 14" size="192, 16" title="MOD / MIX" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CViewContainer" origin="834, 32" size="192, 1" background-color="line" transparent="false"/>
+    <view class="CAnimKnob" origin="758, 60" size="48, 48" control-tag="Osc2Shape" bitmap="knob_s_blue" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="752, 114" size="60, 16" control-tag="Osc2Shape" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
+    <view class="CTextLabel" origin="834, 14" size="192, 16" title="MOD / MIX" font="section" font-color="oscblue" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CViewContainer" origin="834, 32" size="192, 1" background-color="oscbluedim" transparent="false"/>
     <view class="CTextLabel" origin="834, 42" size="64, 14" title="X-MOD" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="842, 60" size="48, 48" control-tag="XMod" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="836, 114" size="60, 16" control-tag="XMod" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CAnimKnob" origin="842, 60" size="48, 48" control-tag="XMod" bitmap="knob_s_blue" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="836, 114" size="60, 16" control-tag="XMod" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="898, 42" size="64, 14" title="SYNC/RING" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="906, 60" size="48, 48" control-tag="SyncRing" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="900, 114" size="60, 16" control-tag="SyncRing" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CSegmentButton" origin="904, 65" size="52, 60" control-tag="SyncRing" style="vertical" segment-names="OFF,RING,SYNC" font="switchfont" text-color="text" text-color-highlighted="ink" frame-color="line" round-radius="5" gradient="swoff" gradient-highlighted="swon_blue" text-alignment="center"/>
     <view class="CTextLabel" origin="962, 42" size="64, 14" title="MIX" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="970, 60" size="48, 48" control-tag="OscMix" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="964, 114" size="60, 16" control-tag="OscMix" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CAnimKnob" origin="970, 60" size="48, 48" control-tag="OscMix" bitmap="knob_s_blue" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
+    <view class="CParamDisplay" origin="964, 114" size="60, 16" control-tag="OscMix" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="30, 140" size="160, 16" title="HIGH-PASS" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CViewContainer" origin="30, 158" size="160, 1" background-color="line" transparent="false"/>
     <view class="CTextLabel" origin="30, 168" size="80, 14" title="HP FREQ" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="38, 186" size="64, 64" control-tag="HpFreq" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="32, 256" size="76, 18" control-tag="HpFreq" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="32, 256" size="76, 18" control-tag="HpFreq" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="110, 168" size="80, 14" title="HP PEAK" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="118, 186" size="64, 64" control-tag="HpPeak" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="112, 256" size="76, 18" control-tag="HpPeak" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="112, 256" size="76, 18" control-tag="HpPeak" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="220, 140" size="160, 16" title="LOW-PASS" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CViewContainer" origin="220, 158" size="160, 1" background-color="line" transparent="false"/>
     <view class="CTextLabel" origin="220, 168" size="80, 14" title="LP FREQ" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="228, 186" size="64, 64" control-tag="LpFreq" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="222, 256" size="76, 18" control-tag="LpFreq" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="222, 256" size="76, 18" control-tag="LpFreq" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="300, 168" size="80, 14" title="LP PEAK" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="308, 186" size="64, 64" control-tag="LpPeak" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="302, 256" size="76, 18" control-tag="LpPeak" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="302, 256" size="76, 18" control-tag="LpPeak" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="410, 140" size="320, 16" title="OUTPUT" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CViewContainer" origin="410, 158" size="320, 1" background-color="line" transparent="false"/>
     <view class="CTextLabel" origin="410, 168" size="80, 14" title="DRIVE" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="418, 186" size="64, 64" control-tag="Drive" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="412, 256" size="76, 18" control-tag="Drive" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="412, 256" size="76, 18" control-tag="Drive" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="490, 168" size="80, 14" title="DRIVE TYPE" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="498, 186" size="64, 64" control-tag="DriveType" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="492, 256" size="76, 18" control-tag="DriveType" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CSegmentButton" origin="496, 206" size="68, 48" control-tag="DriveType" style="vertical" segment-names="SOFT,FUZZ" font="switchfont" text-color="text" text-color-highlighted="ink" frame-color="line" round-radius="5" gradient="swoff" gradient-highlighted="swon_orange" text-alignment="center"/>
     <view class="CTextLabel" origin="570, 168" size="80, 14" title="DRY/WET" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="578, 186" size="64, 64" control-tag="DryWet" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="572, 256" size="76, 18" control-tag="DryWet" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="572, 256" size="76, 18" control-tag="DryWet" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="650, 168" size="80, 14" title="OUTPUT" font="label" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="658, 186" size="64, 64" control-tag="Output" bitmap="knob" height-of-one-image="64" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="652, 256" size="76, 18" control-tag="Output" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="652, 256" size="76, 18" control-tag="Output" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="770, 140" size="256, 16" title="AMP ENV" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CViewContainer" origin="770, 158" size="256, 1" background-color="line" transparent="false"/>
     <view class="CTextLabel" origin="770, 168" size="64, 14" title="ATTACK" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="778, 194" size="48, 48" control-tag="AmpA" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="772, 256" size="60, 16" control-tag="AmpA" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="772, 256" size="60, 16" control-tag="AmpA" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="834, 168" size="64, 14" title="DECAY" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="842, 194" size="48, 48" control-tag="AmpD" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="836, 256" size="60, 16" control-tag="AmpD" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="836, 256" size="60, 16" control-tag="AmpD" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="898, 168" size="64, 14" title="SUSTAIN" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="906, 194" size="48, 48" control-tag="AmpS" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="900, 256" size="60, 16" control-tag="AmpS" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="900, 256" size="60, 16" control-tag="AmpS" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="962, 168" size="64, 14" title="RELEASE" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="970, 194" size="48, 48" control-tag="AmpR" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="964, 256" size="60, 16" control-tag="AmpR" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="964, 256" size="60, 16" control-tag="AmpR" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="30, 296" size="320, 16" title="FILTER ENV" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CViewContainer" origin="30, 314" size="320, 1" background-color="line" transparent="false"/>
     <view class="CTextLabel" origin="30, 324" size="64, 14" title="ATTACK" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="38, 342" size="48, 48" control-tag="FEnvA" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="32, 396" size="60, 16" control-tag="FEnvA" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="32, 396" size="60, 16" control-tag="FEnvA" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="94, 324" size="64, 14" title="DECAY" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="102, 342" size="48, 48" control-tag="FEnvD" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="96, 396" size="60, 16" control-tag="FEnvD" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="96, 396" size="60, 16" control-tag="FEnvD" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="158, 324" size="64, 14" title="SUSTAIN" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="166, 342" size="48, 48" control-tag="FEnvS" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="160, 396" size="60, 16" control-tag="FEnvS" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="160, 396" size="60, 16" control-tag="FEnvS" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="222, 324" size="64, 14" title="RELEASE" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="230, 342" size="48, 48" control-tag="FEnvR" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="224, 396" size="60, 16" control-tag="FEnvR" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="224, 396" size="60, 16" control-tag="FEnvR" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="286, 324" size="64, 14" title="AMOUNT" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="294, 342" size="48, 48" control-tag="FEnvAmt" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="288, 396" size="60, 16" control-tag="FEnvAmt" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="288, 396" size="60, 16" control-tag="FEnvAmt" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="410, 296" size="256, 16" title="LFO" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CViewContainer" origin="410, 314" size="256, 1" background-color="line" transparent="false"/>
     <view class="CTextLabel" origin="410, 324" size="64, 14" title="RATE" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="418, 342" size="48, 48" control-tag="LfoRate" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="412, 396" size="60, 16" control-tag="LfoRate" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="412, 396" size="60, 16" control-tag="LfoRate" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="474, 324" size="64, 14" title="WAVE" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="482, 342" size="48, 48" control-tag="LfoWave" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="476, 396" size="60, 16" control-tag="LfoWave" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="476, 396" size="60, 16" control-tag="LfoWave" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="538, 324" size="64, 14" title="DEPTH" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="546, 342" size="48, 48" control-tag="LfoDepth" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="540, 396" size="60, 16" control-tag="LfoDepth" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="540, 396" size="60, 16" control-tag="LfoDepth" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="602, 324" size="64, 14" title="TARGET" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="610, 342" size="48, 48" control-tag="LfoTarget" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="604, 396" size="60, 16" control-tag="LfoTarget" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="604, 396" size="60, 16" control-tag="LfoTarget" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="770, 296" size="192, 16" title="REVERB" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CViewContainer" origin="770, 314" size="192, 1" background-color="line" transparent="false"/>
     <view class="CTextLabel" origin="770, 324" size="64, 14" title="MIX" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="778, 342" size="48, 48" control-tag="RevMix" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="772, 396" size="60, 16" control-tag="RevMix" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="772, 396" size="60, 16" control-tag="RevMix" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="834, 324" size="64, 14" title="SIZE" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="842, 342" size="48, 48" control-tag="RevSize" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="836, 396" size="60, 16" control-tag="RevSize" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="836, 396" size="60, 16" control-tag="RevSize" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="898, 324" size="64, 14" title="DAMP" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CAnimKnob" origin="906, 342" size="48, 48" control-tag="RevDamp" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="900, 396" size="60, 16" control-tag="RevDamp" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CParamDisplay" origin="900, 396" size="60, 16" control-tag="RevDamp" font="valuesmall" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
     <view class="CTextLabel" origin="30, 440" size="996, 16" title="SCOPE" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
     <view class="CViewContainer" origin="30, 458" size="996, 1" background-color="line" transparent="false"/>
     <view class="CView" origin="30, 468" size="996, 76" custom-view-name="Scope"/>
-    <view class="CTextLabel" origin="30, 70" size="64, 14" title="PRESET" font="labelsmall" font-color="text" text-alignment="center" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
-    <view class="CAnimKnob" origin="38, 86" size="48, 48" control-tag="Preset" bitmap="knob_s" height-of-one-image="48" sub-pixmaps="101" mode="linear mode"/>
-    <view class="CParamDisplay" origin="100, 99" size="156, 22" control-tag="Preset" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-rect-radius="4"/>
+    <view class="CTextLabel" origin="30, 74" size="200, 14" title="PRESET" font="section" font-color="dim" text-alignment="left" back-color="~ TransparentCColor" frame-color="~ TransparentCColor"/>
+    <view class="CTextButton" origin="30, 94" size="28, 24" control-tag="PresetPrev" title="&lt;" font="switchfont" text-color="text" text-color-highlighted="ink" frame-color="line" round-radius="5" gradient="btnoff" gradient-highlighted="btnon" kind="kPushBack"/>
+    <view class="CParamDisplay" origin="62, 94" size="126, 24" control-tag="Preset" font="value" font-color="text" text-alignment="center" back-color="panel" frame-color="line" round-radius="4"/>
+    <view class="CTextButton" origin="192, 94" size="28, 24" control-tag="PresetNext" title="&gt;" font="switchfont" text-color="text" text-color-highlighted="ink" frame-color="line" round-radius="5" gradient="btnoff" gradient-highlighted="btnon" kind="kPushBack"/>
+    <view class="CTextButton" origin="224, 94" size="48, 24" control-tag="SavePreset" title="SAVE" font="switchfont" text-color="text" text-color-highlighted="ink" frame-color="line" round-radius="5" gradient="btnoff" gradient-highlighted="btnon" kind="kPushBack"/>
   </template>
 </vstgui-ui-description>

@@ -134,18 +134,24 @@ int main() {
         }
         check(ok, "every parameter's default text parses back");
     }
-    // 10) drive types: identical at Drive 0, HARD is harsher (more high-frequency energy) at high Drive, both bounded
+    // 10) drive types: near-identical at Drive 0; FUZZ is far harsher and asymmetric (even harmonics), levels stay comparable
     {
-        auto run = [&](int type, double drive) { Synth s; s.setSampleRate(FS); SynthParams p; p.oscMix = 0.0; p.wave1 = 1; p.driveGain = drive; p.driveType = type; p.lpHz = 20000; s.setParams(p); s.reset(); s.noteOn(48, 1.0); return render(s, 48000); };
-        auto hf = [&](const std::vector<float>& x) { auto m = spectrum(x, 20000, 1 << 14); double lo = 0, hi = 0; for (size_t b = 1; b < m.size(); ++b) { double f = b * FS / (1 << 14); (f < 1000 ? lo : hi) += m[b] * m[b]; } return 10 * std::log10(hi / lo); };
+        auto run = [&](int type, double drive) { Synth s; s.setSampleRate(FS); SynthParams p; p.oscMix = 0.0; p.wave1 = 1; p.driveGain = drive; p.driveType = type; p.lpHz = 20000; s.setParams(p); s.reset(); s.noteOn(45, 1.0); return render(s, 96000); };
+        auto bandRatio = [&](const std::vector<float>& x, double fLo, double fHi, double gLo, double gHi) { auto m = spectrum(x, 20000, 1 << 15); double a = 0, b = 0; for (size_t i = 1; i < m.size(); ++i) { double f = i * FS / (1 << 15); if (f >= fLo && f < fHi) a += m[i] * m[i]; if (f >= gLo && f < gHi) b += m[i] * m[i]; } return 10 * std::log10(a / b); };
+        auto rms = [&](const std::vector<float>& x) { double e = 0; for (int i = 20000; i < 40000; ++i) e += x[i] * x[i]; return std::sqrt(e / 20000); };
         auto a0 = run(0, 1.0), b0 = run(1, 1.0);
         double maxDiff = 0; for (size_t i = 0; i < a0.size(); ++i) maxDiff = std::max(maxDiff, (double)std::fabs(a0[i] - b0[i]));
-        auto soft = run(0, 8.0), hard = run(1, 8.0);
-        float mx = 0; for (float v : hard) mx = std::max(mx, std::fabs(v));
-        printf("      drive 0: max diff between types %.2e;  drive 100%%: HF/LF soft %.1f dB, hard %.1f dB\n", maxDiff, hf(soft), hf(hard));
-        check(maxDiff < 0.05 && hf(hard) > hf(soft) + 3.0 && mx < 2.0f, "drive types nearly match at Drive 0; HARD is much harsher at high Drive");
+        auto soft = run(0, 8.0), fuzz = run(1, 8.0);
+        // A2 = 110 Hz triangle: harmonics 2f (220 Hz) vs fundamental, and everything above 2 kHz vs everything below 600 Hz
+        double even_soft = bandRatio(soft, 200, 240, 100, 120), even_fuzz = bandRatio(fuzz, 200, 240, 100, 120);
+        double hf_soft = bandRatio(soft, 2000, 20000, 20, 600), hf_fuzz = bandRatio(fuzz, 2000, 20000, 20, 600);
+        double rs = rms(soft), rf = rms(fuzz), r0 = rms(a0);
+        float mx = 0; for (float v : fuzz) mx = std::max(mx, std::fabs(v));
+        printf("      drive 0 max diff %.2e | 2nd harmonic: soft %.1f dB, fuzz %.1f dB | HF/LF: soft %.1f dB, fuzz %.1f dB | RMS clean %.3f soft %.3f fuzz %.3f\n", maxDiff, even_soft, even_fuzz, hf_soft, hf_fuzz, r0, rs, rf);
+        check(maxDiff < 0.06, "drive types are close at Drive 0");
+        check(hf_fuzz > hf_soft + 15.0 && even_fuzz > even_soft + 10.0 && mx < 2.0f, "FUZZ is much harsher and has strong even harmonics");
+        check(rf > r0 * 0.4 && rf < r0 * 2.5 && rs > r0 * 0.4 && rs < r0 * 2.5, "drive types keep a comparable level");
     }
-
     // 11) filter envelope: +100% amount opens the LP cutoff on note-on, so early audio is brighter than sustained audio
     {
         Synth s; s.setSampleRate(FS); SynthParams p; p.oscMix = 0.0; p.lpHz = 300; p.fAmount = 1.0; p.fAttack = 0.001; p.fDecay = 0.3; p.fSustain = 0.0; p.sustain = 1.0; s.setParams(p); s.reset();
@@ -197,7 +203,7 @@ int main() {
     // 15) presets: names match the parameter list, every preset renders finite audio at sane levels
     {
         const auto& list = presets();
-        bool names = (int)list.size() == kSpecs[kParamPreset].listCount;
+        bool names = (int)list.size() == kFactoryPresetCount && kSpecs[kParamPreset].listCount == kPresetCount;
         for (size_t i = 0; names && i < list.size(); ++i) names = std::string(list[i].name) == kSpecs[kParamPreset].items[i];
         check(names, "preset names match the Preset parameter list");
         bool ok = true;

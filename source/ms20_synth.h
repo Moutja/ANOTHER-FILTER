@@ -1,7 +1,7 @@
 #pragma once
 // Header-only synth engine (no SDK dependency):
 //   8 voices, each: OSC1 + OSC2 (SAW/TRI/SQR, shape, octave, pitch, X-Mod, sync/ring)
-//                   -> drive (SOFT tanh / HARD clip) -> HP stage -> LP stage (cutoff: filter envelope + LFO)
+//                   -> drive (SOFT tanh / FUZZ) -> HP stage -> LP stage (cutoff: filter envelope + LFO)
 //                   -> dry/wet -> amp ADSR
 //   voices are summed, decimated, then sent through a stereo reverb.
 // Everything per-voice runs at 4x the host rate; the summed signal is decimated with a
@@ -24,7 +24,7 @@ constexpr double kReverbWetGain = 1.0;
 
 struct SynthParams
 {
-    int driveType = 0;  // 0 SOFT (tanh), 1 HARD (hard clip, ~2.5x more gain)
+    int driveType = 0;  // 0 SOFT (smooth tanh), 1 FUZZ (asymmetric clipping + octave grit + gate, ~6x more gain)
     int wave1 = 0, oct1 = 1, wave2 = 0, oct2 = 1, syncMode = 0;  // wave 0 SAW 1 TRI 2 SQR; oct 0..3 = 16' 8' 4' 2'; sync 0 OFF 1 RING 2 SYNC
     double pitch1 = 0.0, pitch2 = 0.0;                           // semitones
     double shape1 = 0.0, shape2 = 0.0, xmod = 0.0, oscMix = 0.5; // 0..1
@@ -321,6 +321,7 @@ public:
             v->flt = EnvState();
             v->hp.reset();
             v->lp.reset();
+            v->dc = 0.0;
         }
         v->active = true;
         v->note = note;
@@ -404,9 +405,14 @@ public:
             }
 
             const double hpG = toG(cur_.hpHz);
-            const double comp = 1.0 / std::sqrt(cur_.driveGain);
-            const bool hard = cur_.driveType == 1;
-            const double driveG = hard ? 1.0 + (cur_.driveGain - 1.0) * 2.5 : cur_.driveGain;
+            const bool fuzz = cur_.driveType == 1;
+            const double drive01 = (cur_.driveGain - 1.0) / (Limits::kMaxDriveGain - 1.0);
+            const double driveG = fuzz ? 1.0 + (cur_.driveGain - 1.0) * 6.0 : cur_.driveGain;
+            const double comp = fuzz ? 1.0 : 1.0 / std::sqrt(cur_.driveGain);
+            const double fuzzMix = std::min(1.0, drive01 * 4.0);        // FUZZ fades in over the first quarter of the knob
+            const double fuzzOut = (1.0 + 0.6 * drive01) / (1.0 + 1.5 * drive01);
+            const double gate = 0.04 * drive01;                         // FUZZ: sputtery noise-gate on the pre-gain signal
+            const double dcK = 2.0 * kPi * 8.0 / fsOs_;                 // FUZZ: ~8 Hz DC blocker
             const double g1 = std::min(1.0, 2.0 * (1.0 - cur_.oscMix));
             const double g2 = std::min(1.0, 2.0 * cur_.oscMix);
             const double xmSemis = cur_.xmod * cur_.xmod * 24.0;
@@ -448,7 +454,21 @@ public:
                     if (ring) o2 *= o1;
 
                     const double dry = 0.5 * (g1 * o1 + g2 * o2);
-                    double x = hard ? std::min(1.0, std::max(-1.0, driveG * dry)) : std::tanh(driveG * dry);
+                    double x;
+                    if (fuzz)
+                    {
+                        const double u = driveG * dry;
+                        // asymmetric clipping: flat top on the positive half, softer bottom on the negative half
+                        double y = u >= 0.0 ? std::min(u, 0.5) : -0.9 * std::tanh(-u / 0.9);
+                        y += 0.25 * drive01 * std::min(std::fabs(u), 0.5);   // rectified component = octave-up grit
+                        y *= fuzzOut;
+                        const double a = std::fabs(dry);
+                        if (a < gate) y *= a / gate;                    // gate: notes sputter out as they decay
+                        v.dc += dcK * (y - v.dc);
+                        x = dry + fuzzMix * ((y - v.dc) - dry);
+                    }
+                    else
+                        x = std::tanh(driveG * dry);
                     x *= comp;
                     x = v.hp.highPass(x, hpG, cur_.hpK);
                     x = v.lp.lowPass(x, lpG, cur_.lpK);
@@ -481,6 +501,7 @@ private:
         double p1 = 0.0, p2 = 0.0, last2 = 0.0;
         EnvState amp, flt;
         Stage hp, lp;
+        double dc = 0.0;  // DC blocker state for the FUZZ drive
     };
 
     static double stepEnv(EnvState& e, const EnvCoefs& c)

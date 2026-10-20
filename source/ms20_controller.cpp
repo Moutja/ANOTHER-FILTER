@@ -18,6 +18,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <string>
 #include <vector>
 
@@ -43,9 +46,10 @@ void toTChar(const std::string& s, TChar* out, int cap)
 class SpecParameter : public Parameter
 {
 public:
-    SpecParameter(int id, const TChar* title)
-    : Parameter(title, static_cast<ParamID>(id), STR16(""), 0.0, 0, ParameterInfo::kCanAutomate)
+    SpecParameter(int id, const TChar* title, const Controller* owner)
+    : Parameter(title, static_cast<ParamID>(id), STR16(""), 0.0, 0, isTrigger(id) ? 0 : ParameterInfo::kCanAutomate)
     , id_(id)
+    , owner_(owner)
     {
         const ParamSpec& s = kSpecs[id];
         if (s.fmt == Fmt::List)
@@ -69,7 +73,10 @@ public:
 
     void toString(ParamValue n, String128 str) const SMTG_OVERRIDE
     {
-        toTChar(formatValue(id_, n), str, 128);
+        if (id_ == kParamPreset && owner_)
+            toTChar(owner_->presetDisplayName(specToIndex(id_, n)), str, 128);
+        else
+            toTChar(formatValue(id_, n), str, 128);
     }
 
     bool fromString(const TChar* str, ParamValue& n) const SMTG_OVERRIDE
@@ -88,6 +95,7 @@ public:
 
 private:
     int id_;
+    const Controller* owner_;
 };
 
 } // namespace
@@ -187,8 +195,9 @@ tresult PLUGIN_API Controller::initialize(FUnknown* context)
     {
         TChar title[64];
         toTChar(kSpecs[i].title, title, 64);
-        parameters.addParameter(new SpecParameter(i, title));
+        parameters.addParameter(new SpecParameter(i, title, this));
     }
+    loadUserPresets();
     return kResultOk;
 }
 
@@ -227,6 +236,10 @@ tresult PLUGIN_API Controller::setComponentState(IBStream* state)
             values[i] = v;
     }
 
+    for (int i = 0; i < kParamCount; ++i)
+        if (isTrigger(i))
+            values[i] = 0.0;
+
     // Loading a saved state must not re-apply the preset on top of the saved values
     lastPreset_ = specToIndex(kParamPreset, values[kParamPreset]);
     for (int i = 0; i < kParamCount; ++i)
@@ -234,7 +247,7 @@ tresult PLUGIN_API Controller::setComponentState(IBStream* state)
     return kResultOk;
 }
 
-// Choosing a preset (changing the Preset parameter) loads all of its values
+// Choosing a preset (changing the Preset parameter) loads all of its values; the three buttons act on a press
 tresult PLUGIN_API Controller::setParamNormalized(ParamID tag, ParamValue value)
 {
     const tresult result = EditController::setParamNormalized(tag, value);
@@ -247,13 +260,47 @@ tresult PLUGIN_API Controller::setParamNormalized(ParamID tag, ParamValue value)
             applyPreset(index);
         }
     }
+    else if (tag == kParamPresetPrev || tag == kParamPresetNext || tag == kParamSavePreset)
+    {
+        const int t = static_cast<int>(tag - kParamPresetPrev);
+        const bool down = value > 0.5;
+        if (down && !trigger_[t])
+        {
+            trigger_[t] = false;
+            EditController::setParamNormalized(tag, 0.0);   // the buttons are momentary: pop back up
+            if (tag == kParamPresetPrev)      stepPreset(-1);
+            else if (tag == kParamPresetNext) stepPreset(+1);
+            else                              saveCurrentPreset();
+        }
+        else
+            trigger_[t] = down;
+    }
     return result;
+}
+
+std::string Controller::presetDisplayName(int index) const
+{
+    if (index < 0 || index >= kPresetCount)
+        return "";
+    if (index < kFactoryPresetCount)
+        return kSpecs[kParamPreset].items[index];
+    const int slot = index - kFactoryPresetCount;
+    return user_[slot].used ? "User " + std::to_string(slot + 1) : "(empty)";
 }
 
 void Controller::applyPreset(int index)
 {
     double norm[kParamCount];
-    presetToNormalized(index, norm);
+    if (index < kFactoryPresetCount)
+        presetToNormalized(index, norm);
+    else
+    {
+        const UserPreset& u = user_[index - kFactoryPresetCount];
+        if (!u.used)
+            return;                       // empty slot: keep the current sound
+        for (int i = 0; i < kParamCount; ++i)
+            norm[i] = u.v[i];
+    }
     for (int i = 0; i < kParamCount; ++i)
     {
         if (presetSkips(i))
@@ -263,6 +310,109 @@ void Controller::applyPreset(int index)
         beginEdit(id);
         performEdit(id, norm[i]);
         endEdit(id);
+    }
+}
+
+// Moves the Preset selector (host and window are told) and loads that preset
+void Controller::setPresetIndex(int index)
+{
+    lastPreset_ = index;
+    const double n = indexToNormalized(kParamPreset, index);
+    EditController::setParamNormalized(kParamPreset, n);
+    beginEdit(kParamPreset);
+    performEdit(kParamPreset, n);
+    endEdit(kParamPreset);
+    applyPreset(index);
+}
+
+void Controller::stepPreset(int delta)
+{
+    setPresetIndex((lastPreset_ + delta + kPresetCount) % kPresetCount);
+}
+
+// SAVE: overwrites the selected user slot, or takes the first empty slot when a factory preset is selected
+void Controller::saveCurrentPreset()
+{
+    int slot = -1;
+    if (lastPreset_ >= kFactoryPresetCount)
+        slot = lastPreset_ - kFactoryPresetCount;
+    else
+    {
+        for (int i = 0; i < kUserSlots; ++i)
+            if (!user_[i].used) { slot = i; break; }
+        if (slot < 0)
+            slot = kUserSlots - 1;        // all slots taken: reuse the last one
+    }
+
+    UserPreset& u = user_[slot];
+    for (int i = 0; i < kParamCount; ++i)
+        u.v[i] = presetSkips(i) ? defaultNormalized(i) : getParamNormalized(static_cast<ParamID>(i));
+    u.used = true;
+
+    const std::string path = userPresetPath(slot);
+    std::error_code ec;
+    std::filesystem::create_directories(std::filesystem::path(path).parent_path(), ec);
+    std::ofstream f(path);
+    if (f)
+    {
+        f.precision(9);
+        f << "AnotherFilterPreset 1 " << kParamCount << "\n";
+        for (int i = 0; i < kParamCount; ++i)
+            f << u.v[i] << "\n";
+    }
+    setPresetIndex(kFactoryPresetCount + slot);
+}
+
+std::string Controller::userPresetPath(int slot) const
+{
+    std::string base;
+#ifdef _WIN32
+    char* env = nullptr;
+    size_t len = 0;
+    if (_dupenv_s(&env, &len, "APPDATA") == 0 && env)
+    {
+        base = env;
+        std::free(env);
+    }
+#elif defined(__APPLE__)
+    if (const char* home = std::getenv("HOME"))
+        base = std::string(home) + "/Library/Application Support";
+#else
+    if (const char* home = std::getenv("HOME"))
+        base = std::string(home) + "/.config";
+#endif
+    if (base.empty())
+        base = ".";
+    char name[32];
+    std::snprintf(name, sizeof name, "user_%02d.preset", slot + 1);
+    return (std::filesystem::path(base) / "AnotherFilter" / "Presets" / name).string();
+}
+
+void Controller::loadUserPresets()
+{
+    for (int slot = 0; slot < kUserSlots; ++slot)
+    {
+        std::ifstream f(userPresetPath(slot));
+        if (!f)
+            continue;
+        std::string magic;
+        int version = 0, count = 0;
+        if (!(f >> magic >> version >> count) || magic != "AnotherFilterPreset" || version != 1 || count < 0)
+            continue;
+        UserPreset u;
+        for (int i = 0; i < kParamCount; ++i)
+            u.v[i] = defaultNormalized(i);   // values missing from older files keep their defaults
+        bool ok = true;
+        for (int i = 0; i < count && ok; ++i)
+        {
+            double v = 0.0;
+            if (!(f >> v))
+                ok = false;
+            else if (i < kParamCount)
+                u.v[i] = clamp01(v);
+        }
+        u.used = ok;
+        user_[slot] = u;
     }
 }
 

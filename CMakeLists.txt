@@ -43,4 +43,6 @@ smtg_target_add_plugin_resources(AnotherFilter
     resource/knob_2.0x.png
     resource/knob_s.png
     resource/knob_s_2.0x.png
+    resource/knob_s_blue.png
+    resource/knob_s_blue_2.0x.png
 )

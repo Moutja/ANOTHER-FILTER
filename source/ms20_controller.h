@@ -3,10 +3,12 @@
 #include "pluginterfaces/vst/ivstmidicontrollers.h"
 #include "vstgui/plugin-bindings/vst3editor.h"
 
+#include "ms20_params.h"
 #include "ms20_scope.h"
 
 #include <memory>
 #include <mutex>
+#include <string>
 
 namespace MS20 {
 
@@ -31,6 +33,9 @@ public:
     VSTGUI::CView* createCustomView(VSTGUI::UTF8StringPtr name, const VSTGUI::UIAttributes& attributes,
                                     const VSTGUI::IUIDescription* description, VSTGUI::VST3Editor* editor) SMTG_OVERRIDE;
 
+    // Text shown for entry `index` of the Preset list (factory names, "User N", or "(empty)")
+    std::string presetDisplayName(int index) const;
+
     std::shared_ptr<ScopeBuffer> scope() const
     {
         std::lock_guard<std::mutex> lock(scopeMutex_);
@@ -46,8 +51,22 @@ public:
     Steinberg::tresult PLUGIN_API queryInterface(const char* iid, void** obj) SMTG_OVERRIDE;
 
 private:
+    struct UserPreset
+    {
+        bool used = false;
+        double v[kParamCount] = {};
+    };
+
     void applyPreset(int index);
+    void setPresetIndex(int index);
+    void stepPreset(int delta);
+    void saveCurrentPreset();
+    void loadUserPresets();
+    std::string userPresetPath(int slot) const;
+
     int lastPreset_ = 0;
+    bool trigger_[3] = {false, false, false};
+    UserPreset user_[kUserSlots];
     mutable std::mutex scopeMutex_;
     std::shared_ptr<ScopeBuffer> scope_;
 };

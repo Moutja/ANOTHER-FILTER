@@ -15,7 +15,7 @@ inline const std::vector<Preset>& presets()
     enum { kSaw = 0, kTri = 1, kSqr = 2 };            // waves
     enum { kO16 = 0, kO8 = 1, kO4 = 2, kO2 = 3 };      // octaves
     enum { kOff = 0, kRing = 1, kSync = 2 };          // sync/ring
-    enum { kSoft = 0, kHard = 1 };                   // drive type
+    enum { kSoft = 0, kFuzz = 1 };                   // drive type
     enum { kSin = 0, kLTri = 1, kLSqr = 2, kSampleHold = 3 };  // LFO waves
     enum { kPitch = 0, kShape = 1, kCutoff = 2, kAmp = 3 };
 
@@ -32,7 +32,7 @@ inline const std::vector<Preset>& presets()
 
         {"Sync Lead", {
             {kParamOsc1Wave, kSaw}, {kParamOsc2Wave, kSaw}, {kParamOsc2Pitch, 7.5}, {kParamSyncRing, kSync}, {kParamOscMix, 75},
-            {kParamLpFreq, 6000}, {kParamLpPeak, 15}, {kParamDrive, 30}, {kParamDriveType, kHard},
+            {kParamLpFreq, 6000}, {kParamLpPeak, 15}, {kParamDrive, 30}, {kParamDriveType, kFuzz},
             {kParamAmpAttack, 0.004}, {kParamAmpSustain, 85}, {kParamAmpRelease, 0.2},
             {kParamLfoRate, 5.0}, {kParamLfoTarget, kPitch},
             {kParamRevMix, 15}, {kParamRevSize, 45}}},
@@ -47,7 +47,7 @@ inline const std::vector<Preset>& presets()
 
         {"Acid Bass", {
             {kParamOsc1Wave, kSaw}, {kParamOsc1Oct, kO16}, {kParamOsc2Wave, kSqr}, {kParamOsc2Oct, kO16}, {kParamOscMix, 20},
-            {kParamLpFreq, 600}, {kParamLpPeak, 80}, {kParamDrive, 35}, {kParamDriveType, kHard},
+            {kParamLpFreq, 600}, {kParamLpPeak, 80}, {kParamDrive, 35}, {kParamDriveType, kFuzz},
             {kParamAmpAttack, 0.001}, {kParamAmpDecay, 0.2}, {kParamAmpSustain, 70}, {kParamAmpRelease, 0.08},
             {kParamFEnvAttack, 0.001}, {kParamFEnvDecay, 0.22}, {kParamFEnvSustain, 0}, {kParamFEnvRelease, 0.15}, {kParamFEnvAmount, 75}}},
 
@@ -74,7 +74,7 @@ inline const std::vector<Preset>& presets()
         {"Screamer", {
             {kParamOsc1Wave, kSqr}, {kParamOsc1Shape, 30}, {kParamOsc2Wave, kSaw}, {kParamOsc2Pitch, 0.2}, {kParamOscMix, 50},
             {kParamHpFreq, 120}, {kParamHpPeak, 35}, {kParamLpFreq, 2500}, {kParamLpPeak, 70},
-            {kParamDrive, 70}, {kParamDriveType, kHard},
+            {kParamDrive, 70}, {kParamDriveType, kFuzz},
             {kParamAmpSustain, 90}, {kParamFEnvDecay, 0.4}, {kParamFEnvSustain, 40}, {kParamFEnvAmount, 40},
             {kParamRevMix, 12}}},
 
@@ -106,6 +106,6 @@ inline void presetToNormalized(int index, double* norm)
 }
 
 // Parameters a preset must not touch (performance controls and the preset selector itself)
-inline bool presetSkips(int id) { return id == kParamModWheel || id == kParamPitchBend || id == kParamPreset; }
+inline bool presetSkips(int id) { return id == kParamModWheel || id == kParamPitchBend || id == kParamPreset || isTrigger(id); }
 
 } // namespace MS20

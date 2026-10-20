@@ -1,11 +1,12 @@
 """Renders the knob filmstrips used by resource/ms20.uidesc (needs: pip install pillow).
-   Outputs knob.png (64 px frames) and knob_s.png (48 px frames) in resource/, each with a _2.0x twin for HiDPI.
+   Outputs knob.png (64 px), knob_s.png (48 px) and knob_s_blue.png (48 px, oscillator section) in resource/, each with a _2.0x twin for HiDPI.
    Frames are stacked vertically, FRAMES of them, value 0.0 at the top frame -> 1.0 at the bottom."""
 from PIL import Image, ImageDraw
 import math, os
 
 FRAMES = 101
 ACCENT = (255, 138, 31, 255)
+BLUE = (110, 198, 255, 255)   # light blue used for the oscillator section
 TRACK = (58, 63, 72, 255)
 POINTER = (230, 227, 220, 255)
 BODY_TOP = (52, 56, 64, 255)
@@ -13,7 +14,7 @@ BODY_BOT = (30, 32, 38, 255)
 RIM = (12, 13, 16, 255)
 SS = 4  # supersampling factor for smooth edges
 
-def frame(size, value):
+def frame(size, value, accent=ACCENT):
     S = size * SS
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
@@ -34,10 +35,10 @@ def frame(size, value):
         d.ellipse([x - w / 2, y - w / 2, x + w / 2, y + w / 2], fill=TRACK)
     if value > 0.002:
         end = start + sweep * value
-        d.arc(box, start, end, fill=ACCENT, width=int(w))
+        d.arc(box, start, end, fill=accent, width=int(w))
         for ang in (start, end):
             x, y = pt(r_arc - w / 2 + 0.5 * u, ang)
-            d.ellipse([x - w / 2, y - w / 2, x + w / 2, y + w / 2], fill=ACCENT)
+            d.ellipse([x - w / 2, y - w / 2, x + w / 2, y + w / 2], fill=accent)
 
     # knob body: vertical gradient disc with a dark rim
     r_body = 21 * u
@@ -63,16 +64,16 @@ def frame(size, value):
 
     return img.resize((size, size), Image.LANCZOS)
 
-def strip(size):
+def strip(size, accent=ACCENT):
     out = Image.new("RGBA", (size, size * FRAMES), (0, 0, 0, 0))
     for i in range(FRAMES):
-        out.paste(frame(size, i / (FRAMES - 1)), (0, i * size))
+        out.paste(frame(size, i / (FRAMES - 1), accent), (0, i * size))
     return out
 
 if __name__ == "__main__":
     here = os.path.dirname(os.path.abspath(__file__))
     res = os.path.join(here, "..", "resource")
-    for name, size in (("knob", 64), ("knob_s", 48)):
-        strip(size).save(os.path.join(res, name + ".png"), optimize=True)
-        strip(size * 2).save(os.path.join(res, name + "_2.0x.png"), optimize=True)
-    print("wrote knob / knob_s filmstrips (1x and 2x),", FRAMES, "frames each")
+    for name, size, accent in (("knob", 64, ACCENT), ("knob_s", 48, ACCENT), ("knob_s_blue", 48, BLUE)):
+        strip(size, accent).save(os.path.join(res, name + ".png"), optimize=True)
+        strip(size * 2, accent).save(os.path.join(res, name + "_2.0x.png"), optimize=True)
+    print("wrote knob / knob_s / knob_s_blue filmstrips (1x and 2x),", FRAMES, "frames each")

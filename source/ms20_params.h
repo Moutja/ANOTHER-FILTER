@@ -53,10 +53,17 @@ enum ParamIds : std::uint32_t
     kParamModWheel,    // fed by MIDI CC1 through IMidiMapping
     kParamPitchBend,   // fed by MIDI pitch bend through IMidiMapping (+-2 semitones)
     kParamPreset,
+    kParamPresetPrev,   // momentary buttons handled by the controller, not the sound engine
+    kParamPresetNext,
+    kParamSavePreset,
     kNumParams
 };
 
 constexpr int kParamCount = static_cast<int>(kNumParams);  // int-typed count for loops
+
+constexpr int kFactoryPresetCount = 10;
+constexpr int kUserSlots = 32;                                       // user presets saved to disk
+constexpr int kPresetCount = kFactoryPresetCount + kUserSlots;       // entries in the Preset list
 
 enum class Fmt { Hz, Percent, Db, Seconds, Semitones, List };
 
@@ -99,7 +106,7 @@ inline const ParamSpec kSpecs[kNumParams] = {
     {"Amp Decay",   Fmt::Seconds,   true,  0.005, 5.0,     0.3,     0, {}},
     {"Amp Sustain", Fmt::Percent,   false, 0.0,   100.0,   70.0,    0, {}},
     {"Amp Release", Fmt::Seconds,   true,  0.005, 10.0,    0.4,     0, {}},
-    {"Drive Type",  Fmt::List,      false, 0.0,   0.0,     0.0,     2, {"SOFT", "HARD"}},
+    {"Drive Type",  Fmt::List,      false, 0.0,   0.0,     0.0,     2, {"SOFT", "FUZZ"}},
     {"F-Env Attack",  Fmt::Seconds, true,  0.001, 5.0,     0.005,   0, {}},
     {"F-Env Decay",   Fmt::Seconds, true,  0.005, 5.0,     0.4,     0, {}},
     {"F-Env Sustain", Fmt::Percent, false, 0.0,   100.0,   30.0,    0, {}},
@@ -114,9 +121,14 @@ inline const ParamSpec kSpecs[kNumParams] = {
     {"Reverb Damp",   Fmt::Percent, false, 0.0,   100.0,   50.0,    0, {}},
     {"Mod Wheel",     Fmt::Percent, false, 0.0,   100.0,   0.0,     0, {}},
     {"Pitch Bend",    Fmt::Semitones, false, -2.0, 2.0,    0.0,     0, {}},
-    {"Preset",        Fmt::List,    false, 0.0,   0.0,     0.0,     10,
+    {"Preset",        Fmt::List,    false, 0.0,   0.0,     0.0,     kPresetCount,   // 10 factory names here; user slot names come from the controller
         {"Init", "Fat Saw Lead", "Sync Lead", "Warm Pad", "Acid Bass", "Wobble Bass", "Pluck", "Ring Bell", "Screamer", "Space Drone"}},
+    {"Preset Prev",   Fmt::Percent, false, 0.0,   100.0,   0.0,     0, {}},
+    {"Preset Next",   Fmt::Percent, false, 0.0,   100.0,   0.0,     0, {}},
+    {"Save Preset",   Fmt::Percent, false, 0.0,   100.0,   0.0,     0, {}},
 };
+
+inline bool isTrigger(int id) { return id == kParamPresetPrev || id == kParamPresetNext || id == kParamSavePreset; }
 
 inline double clamp01(double v) { return v < 0.0 ? 0.0 : (v > 1.0 ? 1.0 : v); }
 
@@ -158,7 +170,10 @@ inline std::string formatValue(int id, double norm)
 {
     const ParamSpec& s = kSpecs[id];
     if (s.fmt == Fmt::List)
-        return s.items[specToIndex(id, norm)];
+    {
+        const int i = specToIndex(id, norm);
+        return (i < 12 && s.items[i]) ? s.items[i] : "";
+    }
 
     const double v = specToPlain(id, norm);
     char buf[64];
@@ -197,7 +212,7 @@ inline bool parseValue(int id, const char* text, double& norm)
     if (s.fmt == Fmt::List)
     {
         for (int i = 0; i < s.listCount; ++i)
-            if (iequals(text, s.items[i])) { norm = indexToNormalized(id, i); return true; }
+            if (i < 12 && s.items[i] && iequals(text, s.items[i])) { norm = indexToNormalized(id, i); return true; }
         char* e = nullptr;
         const double v = std::strtod(text, &e);
         if (e == text) return false;
